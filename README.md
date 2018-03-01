@@ -1,22 +1,23 @@
 Original release date : 2/28/18
 
 Reference #1          : "prDeep: Robust Phase Retrieval with Flexible Deep Neural Networks"
+
 Authors               : Christopher A. Metzler, Philip Schniter, Ashok Veeraraghavan, Richard G. Baraniuk
-Download              : 
+
 
 Questions/suggestions/comments: chris.metzler@rice.edu
 
 Primary Contents
 ---------------------------------------------------------------------------
-scripts:
-    PR_demo.m: Demonstrates phase retrieval from noisy coded diffraction and fourier measurements using prDeep.
+Scripts:
+  * PR_demo.m: Demonstrates phase retrieval from noisy coded diffraction and fourier measurements using prDeep.
 
-functions:
-    prDeep.m: Implementation of prDeep
-    HIO.m: Basic implementation of HIO algorithm
+Functions:
+  * prDeep.m: Implementation of prDeep
+  * HIO.m: Basic implementation of HIO algorithm
     
-auxiliary functions:
-    disambig2Drfft.m: Phaseless 2D fourier transforms have phase and translation ambiguities. This function accounts for them.
+Auxiliary functions:
+  * disambig2Drfft.m: Phaseless 2D fourier transforms have phase and translation ambiguities. This function accounts for them.
 
 
 Packages
