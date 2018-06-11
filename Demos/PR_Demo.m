@@ -11,8 +11,9 @@ addpath(genpath('~/fasta-matlab'));
 denoiser_RED='DnCNN';%Available options are NLM, Gauss, Bilateral, BLS-GSM, BM3D, fast-BM3D, BM3D-SAPCA, and DnCNN 
 SamplingRate=4;
 imsize=128; 
+num_trials=4;%Number of initializations to try.
 filename='house.png';
-n_DnCNN_layers=17;%Other option is 17
+n_DnCNN_layers=20;%Other option is 17
 LoadNetworkWeights(n_DnCNN_layers);
 
 ImIn=double(imread(filename));
@@ -24,7 +25,7 @@ errfxn = @(x_hat) PSNR(x_0,reshape(x_hat,[height width]));
 
 measurement_method='fourier';
 noise_model='poisson';
-alpha=3;
+alpha=3;%Amount of Poisson noise to add
 SNR=NaN;%Not used for Poisson noise
 switch lower(measurement_method)
     case 'gaussian'
@@ -119,6 +120,9 @@ switch lower(noise_model)
         sigma_w=std(err);
 end
 
+best_resid=inf;
+for ii=1:num_trials
+
 if isequal(lower(measurement_method),'fourier')
     support=reshape((OversampM*x_0(:))>0,[sqrt(m),sqrt(m)]);
     beta=.9;
@@ -164,23 +168,42 @@ fasta_opts.recordObjective=false;
 % fasta_ops.function=errfxn;
 
 %Recover Signal using prDeep with sigma=50 and amplitude loss fidelity term
-prox_opts.sigma_hat=50;
-prox_opts.lambda=.1;
+if  isequal(lower(measurement_method),'fourier')
+    prox_opts.lambda=1;
+else
+    prox_opts.lambda=.1;
+end
 t0=tic;
-[x_hat_prDeep_Amplitude,outs_final]  = prDeep( M,Mt_asym,y,x_init(:),fasta_opts,prox_opts);
+prox_opts.sigma_hat=50;
+[x_hat_prDeep,outs_final1]  = prDeep( M,Mt_asym,y,x_init(:),fasta_opts,prox_opts);
+prox_opts.sigma_hat=40;
+[x_hat_prDeep,outs_final2]  = prDeep( M,Mt_asym,y,x_hat_prDeep(:),fasta_opts,prox_opts);
+prox_opts.sigma_hat=20;
+[x_hat_prDeep,outs_final3]  = prDeep( M,Mt_asym,y,x_hat_prDeep(:),fasta_opts,prox_opts);
+prox_opts.sigma_hat=10;
+[x_hat_prDeep,outs_final4]  = prDeep( M,Mt_asym,y,x_hat_prDeep(:),fasta_opts,prox_opts);
 t_prDeep_Amplitude=toc(t0)
-x_hat_prDeep_Amplitude = real(reshape(x_hat_prDeep_Amplitude,[height,width]));
-x_hat_prDeep_Amplitude = disambig2Drfft(x_hat_prDeep_Amplitude,x_0,sqrt(n),sqrt(n));
+x_hat_prDeep = real(reshape(x_hat_prDeep,[height,width]));
+x_hat_prDeep = disambig2Drfft(x_hat_prDeep,x_0,sqrt(n),sqrt(n));
 if fasta_opts.recordObjective
-    figure(5);plot(outs_final.objective);title('prDeep Loss Function');
+    figure(5);plot([outs_final1.objective,outs_final2.objective,...
+        outs_final3.objective,outs_final4.objective]);title('prDeep Loss Function');
+end
+
+resid_err=norm(y-abs(M(x_hat_prDeep)),'fro');
+if resid_err<best_resid
+    best_resid=resid_err;
+    x_hat_prDeep_best=x_hat_prDeep;
+end
+
 end
 
 if  isequal(lower(measurement_method),'fourier')
     perf_HIO=PSNR(x_0(:),x_hat_HIO(:));
-    display([num2str(SamplingRate*100),'% Sampling HIO: PSNR=',num2str(perf_HIO),', time=',num2str(t_HIO)])
+    display([num2str(SamplingRate*100),'% Sampling HIO: PSNR=',num2str(perf_HIO),', per trial time=',num2str(t_HIO)])
     figure(1);imshow(x_hat_HIO,[]);title('HIO');
 end
 
-perf_prDeep_Amp=PSNR(x_0,x_hat_prDeep_Amplitude);
-display([num2str(SamplingRate*100),'% Sampling Amplitude prDeep: PSNR=',num2str(perf_prDeep_Amp),', time=',num2str(t_prDeep_Amplitude)])
-figure(2);imshow(x_hat_prDeep_Amplitude,[]);title('prDeep');
+perf_prDeep_Amp=PSNR(x_0,x_hat_prDeep_best);
+display([num2str(SamplingRate*100),'% Sampling prDeep: PSNR=',num2str(perf_prDeep_Amp),', per trial time=',num2str(t_prDeep_Amplitude)])
+figure(2);imshow(x_hat_prDeep_best,[]);title('prDeep');
