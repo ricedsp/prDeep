@@ -28,7 +28,7 @@ Dependencies
 ---------------------------------------------------------------------------
 D-AMP Toolbox (https://github.com/ricedsp/D-AMP_Toolbox) must be on your path.
 MatConvNet (http://www.vlfeat.org/matconvnet/) must be compiled and on your path.
-FASTA (https://github.com/tomgoldstein/fasta-matlab/tree/master) must be on your path.
+FASTA (https://github.com/tomgoldstein/fasta-matlab/) must be on your path.
 
 Installation
 ---------------------------------------------------------------------------
